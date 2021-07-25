@@ -1,0 +1,89 @@
+#
+# Services
+#
+
+version: "3.5"
+services:
+  nginx:
+    image: nginx:1.13.9-alpine
+    networks:
+      - nodelocal
+      - nodelocal-private
+    ports:
+      - "127.0.0.1:2354:80"
+    volumes:
+      - type: bind
+        source: ./conf/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+  
+  mariadb:
+    image: mariadb:10.2.13
+    hostname: mariadb
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    networks:
+      - nodelocal-private
+    ports:
+      - "127.0.0.1:23306:3306"
+    volumes:
+      - ./conf/init:/docker-entrypoint-initdb.d/:ro
+      - type: bind
+        source: ./conf/mariadb.cnf
+        target: /etc/mysql/conf.d/docker.cnf
+        read_only: true
+      - type: volume
+        source: mariadb
+        target: /var/lib/mysql
+
+  pma:
+    image: phpmyadmin/phpmyadmin:4.7.9-1
+    environment:
+      PMA_HOST: mariadb
+    networks:
+      - nodelocal-private
+    ports:
+      - "127.0.0.1:2355:80"
+    volumes:
+      - type: bind
+        source: ./conf/pma.config.user.inc.php
+        target: /etc/phpmyadmin/config.user.inc.php
+        read_only: true
+
+  wordpress:
+    image: wordpress
+    restart: always
+    container_name: wordpress
+    networks:
+      - nodelocal-private
+    ports:
+      - 127.0.0.1:9001:80
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: ""
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wordpress:/var/www/html
+
+#
+# Data volume definitions
+#
+volumes:
+  mariadb:
+  wordpress:
+
+#
+# Network definitions
+#
+networks:
+  nodelocal:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+  nodelocal-private:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "false"

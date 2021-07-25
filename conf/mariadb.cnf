@@ -1,0 +1,18 @@
+[client]
+default-character-set=utf8mb4
+
+[mysql]
+default-character-set=utf8mb4
+
+[mysqld]
+max_connections=151
+
+innodb_buffer_pool_size=512M
+innodb_file_format=barracuda
+innodb_file_per_table=true
+innodb_flush_method=O_DIRECT
+innodb_large_prefix=true
+
+collation-server=utf8mb4_unicode_520_ci
+init-connect='SET NAMES utf8mb4'
+character-set-server=utf8mb4
